@@ -151,6 +151,13 @@ window.onload = function() {
                 passEnc = encode(passHash),
                 strongPass = findStrongPass(passEnc, settings.criteria),
                 strength = checkStrength(passEnc, settings.criteria);
+
+            if (strongPass.result) {
+                content.postMessage({
+                    method: 'fillPass',
+                    password: strongPass.password
+                });
+            }
         });
     });
 };
@@ -468,7 +475,8 @@ function findStrongPass(data, options, tries) {
     if (data.length < options.length) {
         return {
             result: false,
-            message: 'Password too short'
+            message: 'Password too short',
+            password: null
         };
     }
 
@@ -481,7 +489,8 @@ function findStrongPass(data, options, tries) {
             c.info('strong password', subData);
             return {
                 result: true,
-                message: subData
+                message: 'Successfully found strong password',
+                password: subData
             };
         }
 
@@ -493,7 +502,8 @@ function findStrongPass(data, options, tries) {
     if (tries >= 10) {
         return {
             result: false,
-            message: 'Tried 10 times without finding a strong password'
+            message: 'Tried 10 times without finding a strong password',
+            password: null
         };
     }
     return findStrongPass(encode(data), options, tries);
@@ -516,9 +526,9 @@ function checkStrength(data, options, cb) {
 
     var resultCounts = {
         lowercase: { count: (data.length - data.replace(settings.characters.lowercase.regex, '').length) },
-        uppercase: { count: (data.length - data.replace(/[A-Z]/g, '').length) },
-        numbers: { count: (data.length - data.replace(/[0-9]/g, '').length) },
-        special: { count: (data.length - data.replace(/[\.\-\:\+\=\^\!\/\*\?\&\<\>\(\)\[\]\{\}\@\%\$\#]/g, '').length) },
+        uppercase: { count: (data.length - data.replace(settings.characters.uppercase.regex, '').length) },
+        numbers: { count: (data.length - data.replace(settings.characters.numbers.regex, '').length) },
+        special: { count: (data.length - data.replace(settings.characters.special.regex, '').length) },
         length: data.length
     };
 

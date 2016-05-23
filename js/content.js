@@ -102,29 +102,21 @@ function messagingMethods(msg, src) {
     var skipMethods = ['console'];
     if (!_.contains(skipMethods, msg.method)) { c.log('msg', msg); }
 
-    switch(msg.method) {
-        // This one should never change.
-        case 'console':
+    var methods = {
+        console: function() {
             console[msg.action].apply(console, msg.args);
-            break;
+        },
 
-        case 'ready':
-            // c.log('got ready');
-            break;
+        fillPass: function() {
+            c.log('filling all password fields with', msg.password);
+            $('input:password').val(msg.password);
+        }
+    };
 
-        case 'test':
-            // c.log('recieved "test" from ' + src.name);
-
-        case 'getInfo':
-            c.log('Sending "pageInfo" to popup.');
-            popup.postMessage({
-                method: 'pageInfo',
-                info: document.location.hostname
-            });
-            break;
-
-        default:
-            c.log('unknown method: ' + msg.method);
+    if (msg.method in methods) {
+        methods[msg.method].call();
+    } else {
+        c.log('unknown method: ' + msg.method);
     }
 }
 
@@ -132,7 +124,7 @@ var content = {
     init: function() {
         setupMessaging();
 
-        c.clear();
+        // c.clear();
 
         c.log('content.js is ready.');
     }
