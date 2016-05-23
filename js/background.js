@@ -5,8 +5,8 @@ var c = {
         obj: 'padding: 2px 0px;'
     },
     _targets: {
-        popup: false,
-        background: false,
+        popup: true,
+        background: true,
         content: true
     },
 
@@ -95,3 +95,4 @@ chrome.runtime.onConnect.addListener(function(port) {
         });
     }
 });
+
