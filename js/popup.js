@@ -20,6 +20,8 @@ var c = {
             and prototype it for easier management.
     */
 
+
+
     // To which sections should this page's console messages be relayed?
     _targets: {
         popup: true,
@@ -101,6 +103,58 @@ var c = {
     }
 };
 
+var settings = {
+    characters: {
+        lowercase: {
+            string: 'abcdefghijklmnopqrstuvwxyz',
+            regex: /[a-z]/g
+        },
+
+        uppercase: {
+            string: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+            regex: /[A-Z]/g
+        },
+
+        numbers: {
+            string: '0123456789',
+            regex: /[0-9]/g
+        },
+
+        special: {
+            string: '.-:+=^!/*?&<>()[]{}@%$#',
+            regex: /[\.\-\:\+\=\^\!\/\*\?\&\<\>\(\)\[\]\{\}\@\%\$\#]/g
+        }
+    },
+
+    criteria: {
+        uppercase: 2,
+        lowercase: 2,
+        numbers: 2,
+        special: 2,
+        length: 12
+    },
+
+    maxTries: 1
+};
+
+window.onload = function() {
+    setupMessaging();
+
+    $('#genPass').on('click', function(e) {
+        chrome.tabs.getSelected(null, function(tab) {
+            tab.url = $('<a/>', { href: tab.url })[0];
+
+            var domain = tab.url.hostname;
+                password = $('#password').val(),
+                passSalt = [domain, password].join(':'),
+                passHash = hash(passSalt),
+                passEnc = encode(passHash),
+                strongPass = findStrongPass(passEnc, settings.criteria),
+                strength = checkStrength(passEnc, settings.criteria);
+        });
+    });
+};
+
 function setupMessaging() {
     // Enable messaging for content
     chrome.tabs.query({
@@ -155,20 +209,12 @@ function messagingMethods(msg) {
     }
 }
 
+function getPass(domain, password) {
 
-window.onload = function() {
-    setupMessaging();
+}
 
-    $('#genPass').on('click', function(e) {
-        c.log('Sending "getInfo" to content.');
-        content.postMessage({ method: 'getInfo'});
-    });
-
-    // c.log('testing');
-};
-
-// http://www.myersdaily.org/joseph/javascript/md5-text.html
 function hash(string) {
+    // http://www.myersdaily.org/joseph/javascript/md5-text.html
     function md5cycle(x, k) {
         var a = x[0], b = x[1], c = x[2], d = x[3];
 
@@ -373,20 +419,20 @@ function hash(string) {
     return md5(string);
 }
 
-// https://github.com/msealand/z85.node/blob/master/index.js
 function encode(data) {
-    var encoder = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ.-:+=^!/*?&<>()[]{}@%$#'.split('');
+    // https://github.com/msealand/z85.node/blob/master/index.js
+    var encoder = function (characters) {
+        var encoderCharacters;
+        for (var item in characters) { encoderCharacters += characters[item].string; }
+        return encoderCharacters;
+    }(settings.characters);
 
-    c.log('data.length % 4', data.length % 4);
-
-    c.log('data', data); 
-    // return;
-
+    // Pad the string to make divisible by 4
     if ((data.length % 4) != 0) {
         var padding = Array(5 - data.length %4).join('0');
         data += padding;
     }
-    c.log('padded data', data);
+    // c.log('padded data', data);
 
     var str = '',
         byte_nbr = 0,
@@ -394,13 +440,9 @@ function encode(data) {
         value = 0;
 
     while (byte_nbr < size) {
-        var characterCode;
-
-        if (typeof data == 'string') {
-            characterCode = data.charCodeAt(byte_nbr++);
-        } else {
-            characterCode = data[byte_nbr++];
-        }
+        var characterCode = (typeof data === 'string'
+            ? data.charCodeAt(byte_nbr++)
+            : data[byte_nbr++]);
 
         value = (value * 256) + characterCode;
 
@@ -419,3 +461,86 @@ function encode(data) {
 
     return str;
 };
+
+function findStrongPass(data, options, tries) {
+    var tries = tries || 1;
+
+    if (data.length < options.length) {
+        return {
+            result: false,
+            message: 'Password too short'
+        };
+    }
+
+    data += data.substr(0, options.length -1);
+
+    var i = 0;
+    while (i + length <= data.length) {
+        var subData = data.substr(i, options.length);
+        if (checkStrength(subData, options).strong) {
+            c.info('strong password', subData);
+            return {
+                result: true,
+                message: subData
+            };
+        }
+
+        i++;
+    }
+
+    tries++;
+
+    if (tries >= 10) {
+        return {
+            result: false,
+            message: 'Tried 10 times without finding a strong password'
+        };
+    }
+    return findStrongPass(encode(data), options, tries);
+}
+
+function checkStrength(data, options, cb) {
+    var defaults = { uppercase: 0, lowercase: 0,
+        numbers: 0, special: 0, length: 8 };
+
+    options = (!options ? defaults : $.extend({}, defaults, options));
+    // data += data.substr(0, options.length -1);
+    var result = { length: data.length };
+
+    // c.log('options', options);
+    // c.log(data);
+    // $.each(defaults, function(item) {
+    //     if (item === 'length') return;
+    //     result[item] = (data.length - data.replace(settings.characters[item].regex));
+    // });
+
+    var resultCounts = {
+        lowercase: { count: (data.length - data.replace(settings.characters.lowercase.regex, '').length) },
+        uppercase: { count: (data.length - data.replace(/[A-Z]/g, '').length) },
+        numbers: { count: (data.length - data.replace(/[0-9]/g, '').length) },
+        special: { count: (data.length - data.replace(/[\.\-\:\+\=\^\!\/\*\?\&\<\>\(\)\[\]\{\}\@\%\$\#]/g, '').length) },
+        length: data.length
+    };
+
+    var resultPass = {
+        lowercase: { pass: (resultCounts.lowercase.count >= options.lowercase) },
+        uppercase: { pass: (resultCounts.uppercase.count >= options.uppercase) },
+        numbers: { pass: (resultCounts.numbers.count >= options.numbers) },
+        special: { pass: (resultCounts.special.count >= options.special) },
+        length: { pass: (resultCounts.length.count >= options.length) },
+        strong: ((resultCounts.lowercase.count >= options.lowercase)
+            && (resultCounts.uppercase.count >= options.uppercase)
+            && (resultCounts.numbers.count >= options.numbers)
+            && (resultCounts.special.count >= options.special)
+            && (resultCounts.length >= options.length)),
+        password: data
+    };
+
+    return $.extend(true, {}, resultPass, resultCounts);
+}
+
+function password(pass) {
+    var _this = this;
+
+    this.value = pass;
+}
