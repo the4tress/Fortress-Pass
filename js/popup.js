@@ -139,12 +139,13 @@ var settings = {
 
 window.onload = function() {
     setupMessaging();
+    resizeWindow();
 
     $('#genPass').on('click', function(e) {
         chrome.tabs.getSelected(null, function(tab) {
             tab.url = $('<a/>', { href: tab.url })[0];
 
-            var domain = tab.url.hostname;
+            var domain = tab.url.hostname,
                 password = $('#password').val(),
                 passSalt = [domain, password].join(':'),
                 passHash = hash(passSalt),
@@ -159,6 +160,35 @@ window.onload = function() {
                 });
             }
         });
+    });
+
+    $('#showPass').on('click', function(e) {
+        $('#masterPass').attr('type', ($('#masterPass').attr('type') === 'password'
+            ? 'text' : 'password'));
+    });
+
+    $('#fortressPass').on('click', function(e) {
+        e.preventDefault();
+        
+        chrome.tabs.getSelected(null, function(tab) {
+            tab.url = $('<a/>', { href: tab.url })[0];
+
+            var domain = tab.url.hostname,
+                password = $('#password').val(),
+                passSalt = [domain, password].join(':'),
+                passHash = hash(passSalt),
+                passEnc = encode(passHash),
+                strongPass = findStrongPass(passEnc, settings.criteria),
+                strength = checkStrength(passEnc, settings.criteria);
+
+            if (strongPass.result) {
+                content.postMessage({
+                    method: 'fillPass',
+                    password: strongPass.password
+                });
+            }
+        });
+        
     });
 };
 
@@ -180,44 +210,23 @@ function setupMessaging() {
 
 function messagingMethods(msg) {
     /*
-        This handles the messages recieved from background.js or content.js.
-
-        Add all messaging methods here.
+    This handles the messages recieved from background.js or content.js.
+    Add all messaging methods here.
     */
 
     // Log everything except console methods. This prevents an infinite loop from 'c'.
     var skipMethods = ['console'];
     if (!_.contains(skipMethods, msg.method)) { c.log('msg', msg); }
 
-    switch(msg.method) {
-        case 'ready':
-            // c.log('Ready to send to content.');
-            // c.log('Sending "test" to content.');
-            // content.postMessage({ method: 'test' });
-            break;
-
-        case 'pageInfo':
-            var info = msg.info.split('.');
-            var domain = [info[info.length -2], info[info.length -1]].join('.');
-            var password = $('#password').val();
-            var passSalt = [domain, password].join(':');
-            var passHash = hash(passSalt);
-            var passEnc = encode(passHash);
-
-            c.log('domain', domain);
-            c.log('password', password);
-            c.log('passSalt', passSalt);
-            c.log('passHash', passHash);
-            c.log('passEnc', passEnc);
-            break;
-
-        default:
-            c.warn('No method for ' + msg.method);
+    var methods = {
+        ready: function() { c.log('Ready to send to content.'); }
     }
-}
 
-function getPass(domain, password) {
-
+    if (msg.method in methods) {
+        methods[msg.method].call();
+    } else {
+        c.warn('No method for ' + msg.method);
+    }
 }
 
 function hash(string) {
@@ -439,7 +448,6 @@ function encode(data) {
         var padding = Array(5 - data.length %4).join('0');
         data += padding;
     }
-    // c.log('padded data', data);
 
     var str = '',
         byte_nbr = 0,
@@ -514,15 +522,7 @@ function checkStrength(data, options, cb) {
         numbers: 0, special: 0, length: 8 };
 
     options = (!options ? defaults : $.extend({}, defaults, options));
-    // data += data.substr(0, options.length -1);
     var result = { length: data.length };
-
-    // c.log('options', options);
-    // c.log(data);
-    // $.each(defaults, function(item) {
-    //     if (item === 'length') return;
-    //     result[item] = (data.length - data.replace(settings.characters[item].regex));
-    // });
 
     var resultCounts = {
         lowercase: { count: (data.length - data.replace(settings.characters.lowercase.regex, '').length) },
@@ -553,4 +553,27 @@ function password(pass) {
     var _this = this;
 
     this.value = pass;
+}
+
+function resizeWindow(callback) {
+    /*
+        This will resize the popup window.
+
+        Use callback to fire an event after the resize is complete.
+    */
+
+    callback = (arguments.length == 2 && typeof callback === 'function'
+        ? callback
+        : function() { return; });
+
+    $('body')
+        .css({ display: 'none' })
+        .animate({
+            width: 300,
+            // height: 400
+        }, 10, function() {
+            $('body').css({ display: 'block' });
+
+            callback();
+        });
 }

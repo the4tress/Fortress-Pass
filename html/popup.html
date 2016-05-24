@@ -3,16 +3,92 @@
 <html>
 <!-- http://stackoverflow.com/questions/5142103/regex-to-validate-password-strength -->
 <head>
-    <link rel="stylesheet" type="text/css" href="/css/style.css"></link>
+	<link rel="stylesheet" type="text/css" href="/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="/css/style.css">
 
     <script type="text/javascript" src="/js/jquery.js"></script>
+	<script type="text/javascript" src="/js/bootstrap.min.js"></script>
     <script type="text/javascript" src="/js/underscore.js"></script>
 
-    <script type="text/javascript" src="/js/popup.js"></script>
+	<script type="text/javascript" src="/js/popup.js"></script>
+
+	<style>
+		body { margin: 10px 0; }
+	</style>
 </head>
 
 <body>
-    <input id="password" type="text" value="asdf"></input>
-    <button id="genPass">Generate Password</button>
+	<div class="container">
+		<form id="fortressPass">
+			<div class="row">
+				<div class="col-sm-8">
+					<div class="form-group">
+						<label for="masterPass">Master Password</label>
+						<div class="input-group">
+							<input id="masterPass" class="form-control" type="text" value="asdf">
+
+							<div class="input-group-btn">
+								<button id="showPass" class="btn btn-default" type="button" aria-label="Show Password">
+									<span class="glyphicon glyphicon-eye-open"></span>
+								</button>
+
+								<button id="showPass" class="btn btn-default" type="submit" aria-label="Submit">
+									<span class="glyphicon glyphicon-ok"></span>
+								</button>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="row">
+				<div class="col-sm-12">
+					<div class="panel-group" role="tablist">
+						<div class="panel panel-default">
+							<div class="panel-heading" role="tab" id="collapseListGroupHeading1">
+								<h4 class="panel-title">
+									<a class="" role="button" data-toggle="collapse" href="#collapseListGroup1" aria-expanded="false" aria-controls="collapseListGroup1">
+										Options
+									</a>
+								</h4>
+							</div>
+
+							<div id="collapseListGroup1" class="panel-collapse collapse" role="tabpanel" aria-labelledby="collapseListGroupHeading1" aria-expanded="false">
+								<ul class="list-group">
+									<li class="list-group-item">Length</li>
+									<li class="list-group-item">Lowercase</li>
+									<li class="list-group-item">Uppercase</li>
+									<li class="list-group-item">Numbers</li>
+									<li class="list-group-item">Special</li>
+								</ul>
+								<div class="panel-footer">Footer</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="row">
+				<div class="col-sm-12">
+					<div class="form-group">
+						<label for="uniquePass">Unique Password</label>
+						<div class="input-group">
+							<input id="uniquePass" class="form-control" type="text" disabled>
+							
+							<div class="input-group-btn">
+								<button id="copyPass" class="btn btn-default" type="button" arial-label="Copy" data-toggle="tooltip" data-placement="left" title="Tooltip on left">
+									<span class="glyphicon glyphicon-copy"></span>
+								</button>
+
+								<button id="fillPass" class="btn btn-default" type="button" arial-label="Fill Password" data-toggle="tooltip" title="Some tooltip text!">
+									<span class="glyphicon glyphicon-log-in"></span>
+								</button>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</form>
+	</div>
 </body>
 </html>
