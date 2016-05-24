@@ -3,39 +3,254 @@
 <html>
 <!-- http://stackoverflow.com/questions/5142103/regex-to-validate-password-strength -->
 <head>
+	<!-- Material Design fonts -->
+	<link rel="stylesheet" type="text/css" href="/css/roboto.css">
+	<link rel="stylesheet" type="text/css" href="/css/material-icons.css">
+
 	<link rel="stylesheet" type="text/css" href="/css/bootstrap.min.css">
+
+	<!-- Bootstrap Material Design -->
+	<link rel="stylesheet" type="text/css" href="/css/bootstrap-material-design.min.css">
+	<link rel="stylesheet" type="text/css" href="/css/ripples.min.css">
+
     <link rel="stylesheet" type="text/css" href="/css/style.css">
 
     <script type="text/javascript" src="/js/jquery.js"></script>
 	<script type="text/javascript" src="/js/bootstrap.min.js"></script>
     <script type="text/javascript" src="/js/underscore.js"></script>
-
+    <script type="text/javascript" src="/js/ripples.min.js"></script>
+    <script type="text/javascript" src="/js/material.min.js"></script>
+    
 	<script type="text/javascript" src="/js/popup.js"></script>
 
 	<style>
-		body { margin: 10px 0; }
+		ul.nav { overflow: hidden; }
+
+		.navbar { margin-bottom: -10px; }
+
+		nav input {
+			color: #fff !important;
+			text-align: center;
+		}
+
+		nav label {
+			color: #fff !important;
+			top: 44px;
+			width: 100%;
+			text-align: center;
+			text-transform: uppercase;
+			margin-top: 10px;
+		}
+
+		nav .form-group { display: none; }
+
+		nav [data-toggle="slide"] {
+			color: #fff !important;
+			text-transform: uppercase;
+		}
+
+		#showPass, #copyPass { cursor: pointer; }
 	</style>
+
 </head>
 
 <body>
-	<div class="container">
+	<nav class="navbar navbar-inverse">
+		<div class="container-fluid">
+			<!-- Brand and toggle get grouped for better mobile display -->
+			<div class="navbar-header">
+				<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+					<span class="sr-only">Toggle navigation</span>
+					<span class="icon-bar"></span>
+					<span class="icon-bar"></span>
+					<span class="icon-bar"></span>
+				</button>
+				<a class="navbar-brand" href="#">Fortress Pass</a>
+			</div>
+
+			<!-- Collect the nav links, forms, and other content for toggling -->
+			<div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+				<ul class="nav navbar-nav">
+ 					<!--li data-param="domain">
+						<div class="form-group is-empty">
+							<label class="control-label col-sm-12" for="domain">domain</label>
+							<div class="input-group col-sm-12">
+								<input type="text" id="domain" class="form-control col-sm-2" value="0" style="text-align: center;">
+							</div>
+						</div>
+					</li-->
+
+ 					<li data-param="lowercase">
+						<a href="#" class="btn btn-default btn-block" for="lowercase" data-toggle="slide">
+							lowercase
+							<div class="ripple-container"></div>
+						</a>
+
+						<div class="form-group is-empty">
+							<div class="input-group col-sm-2">
+								<span class="input-group-btn">
+									<button type="button" class="btn btn-fab btn-fab-mini" for="lowercase" data-action="remove">
+										<i class="material-icons">remove</i>
+										<div class="ripple-container"></div>
+									</button>
+								</span>
+
+								<input type="text" id="lowercase" class="form-control col-sm-2" autocomplete="off" value="0">
+
+								<span class="input-group-btn">
+									<button type="button" class="btn btn-fab btn-fab-mini" for="lowercase" data-action="add">
+										<i class="material-icons">add</i>
+										<div class="ripple-container"></div>
+									</button>
+								</span>
+							</div>
+						</div>
+					</li>
+
+					<li data-param="uppercase">
+						<a href="#" class="btn btn-default btn-block" for="uppercase" data-toggle="slide">
+							uppercase
+							<div class="ripple-container"></div>
+						</a>
+
+						<div class="form-group is-empty">
+							<div class="input-group col-sm-2">
+								<span class="input-group-btn">
+									<button type="button" class="btn btn-fab btn-fab-mini" for="uppercase" data-action="remove">
+										<i class="material-icons">remove</i>
+										<div class="ripple-container"></div>
+									</button>
+								</span>
+
+								<input type="text" id="uppercase" class="form-control col-sm-2" autocomplete="off" value="0" style="text-align: center;">
+
+								<span class="input-group-btn">
+									<button type="button" class="btn btn-fab btn-fab-mini" for="uppercase" data-action="add">
+										<i class="material-icons">add</i>
+										<div class="ripple-container"></div>
+									</button>
+								</span>
+							</div>
+						</div>
+					</li>
+
+					<li data-param="numbers">
+						<a href="#" class="btn btn-default btn-block" for="numbers" data-toggle="slide">
+							numbers
+							<div class="ripple-container"></div>
+						</a>
+
+						<div class="form-group is-empty">
+							<div class="input-group col-sm-2">
+								<span class="input-group-btn">
+									<button type="button" class="btn btn-fab btn-fab-mini" for="numbers" data-action="remove">
+										<i class="material-icons">remove</i>
+										<div class="ripple-container"></div>
+									</button>
+								</span>
+
+								<input type="text" id="numbers" class="form-control col-sm-2" autocomplete="off" value="0" style="text-align: center;">
+
+								<span class="input-group-btn">
+									<button type="button" class="btn btn-fab btn-fab-mini" for="numbers" data-action="add">
+										<i class="material-icons">add</i>
+										<div class="ripple-container"></div>
+									</button>
+								</span>
+							</div>
+						</div>
+					</li>
+
+					<li data-param="special">
+						<a href="#" class="btn btn-default btn-block" for="special" data-toggle="slide">
+							special
+							<div class="ripple-container"></div>
+						</a>
+
+						<div class="form-group is-empty">
+							<div class="input-group col-sm-2">
+								<span class="input-group-btn">
+									<button type="button" class="btn btn-fab btn-fab-mini" for="special" data-action="remove">
+										<i class="material-icons">remove</i>
+										<div class="ripple-container"></div>
+									</button>
+								</span>
+
+								<input type="text" id="special" class="form-control col-sm-2" autocomplete="off" value="0" style="text-align: center;">
+
+								<span class="input-group-btn">
+									<button type="button" class="btn btn-fab btn-fab-mini" for="special" data-action="add">
+										<i class="material-icons">add</i>
+										<div class="ripple-container"></div>
+									</button>
+								</span>
+							</div>
+						</div>
+					</li>
+
+					<li data-param="length">
+						<a href="#" class="btn btn-default btn-block" for="length" data-toggle="slide">
+							length
+							<div class="ripple-container"></div>
+						</a>
+
+						<div class="form-group is-empty">
+							<div class="input-group col-sm-2">
+								<span class="input-group-btn">
+									<button type="button" class="btn btn-fab btn-fab-mini" for="length" data-action="remove">
+										<i class="material-icons">remove</i>
+										<div class="ripple-container"></div>
+									</button>
+								</span>
+
+								<input type="text" id="length" class="form-control col-sm-2" autocomplete="off" value="0" style="text-align: center;">
+
+								<span class="input-group-btn">
+									<button type="button" class="btn btn-fab btn-fab-mini" for="length" data-action="add">
+										<i class="material-icons">add</i>
+										<div class="ripple-container"></div>
+									</button>
+								</span>
+							</div>
+						</div>
+					</li>
+
+				</ul>
+			</div>
+		</div>
+	</nav>
+
+	<div class="container" id="content">
 		<form id="fortressPass">
 			<div class="row">
-				<div class="col-sm-8">
-					<div class="form-group">
-						<label for="masterPass">Master Password</label>
+				<div class="col-sm-12">
+					<div class="form-group label-floating is-empty">
 						<div class="input-group">
-							<input id="masterPass" class="form-control" type="text" value="asdf">
+							<label class="control-label" for="addon3a">Master password or phrase</label>
 
-							<div class="input-group-btn">
-								<button id="showPass" class="btn btn-default" type="button" aria-label="Show Password">
-									<span class="glyphicon glyphicon-eye-open"></span>
-								</button>
+							<input type="password" id="masterPass" class="form-control" autocomplete="off">
 
-								<button id="showPass" class="btn btn-default" type="submit" aria-label="Submit">
-									<span class="glyphicon glyphicon-ok"></span>
-								</button>
-							</div>
+							<p class="help-block">Enter your master password which will be used to create your unique password.</p>
+
+							<span class="input-group-addon">
+								<i id="showPass" class="material-icons">visibility</i>
+							</span>
+						</div>
+
+						<span class="material-input"></span>
+					</div>
+				</div>
+			</div>
+
+			<div class="row">
+				<div class="col-sm-12">
+					<div class="form-group is-empty">
+						<div class="input-group">
+							<input type="text" id="uniquePass" class="form-control" autocomplete="off" placeholder="Unique password" disabled>
+
+							<span class="input-group-addon">
+								<i id="copyPass" class="material-icons">content_copy</i>
+							</span>
 						</div>
 					</div>
 				</div>
@@ -43,49 +258,11 @@
 
 			<div class="row">
 				<div class="col-sm-12">
-					<div class="panel-group" role="tablist">
-						<div class="panel panel-default">
-							<div class="panel-heading" role="tab" id="collapseListGroupHeading1">
-								<h4 class="panel-title">
-									<a class="" role="button" data-toggle="collapse" href="#collapseListGroup1" aria-expanded="false" aria-controls="collapseListGroup1">
-										Options
-									</a>
-								</h4>
-							</div>
-
-							<div id="collapseListGroup1" class="panel-collapse collapse" role="tabpanel" aria-labelledby="collapseListGroupHeading1" aria-expanded="false">
-								<ul class="list-group">
-									<li class="list-group-item">Length</li>
-									<li class="list-group-item">Lowercase</li>
-									<li class="list-group-item">Uppercase</li>
-									<li class="list-group-item">Numbers</li>
-									<li class="list-group-item">Special</li>
-								</ul>
-								<div class="panel-footer">Footer</div>
-							</div>
-						</div>
-					</div>
-				</div>
-			</div>
-
-			<div class="row">
-				<div class="col-sm-12">
-					<div class="form-group">
-						<label for="uniquePass">Unique Password</label>
-						<div class="input-group">
-							<input id="uniquePass" class="form-control" type="text" disabled>
-							
-							<div class="input-group-btn">
-								<button id="copyPass" class="btn btn-default" type="button" arial-label="Copy" data-toggle="tooltip" data-placement="left" title="Tooltip on left">
-									<span class="glyphicon glyphicon-copy"></span>
-								</button>
-
-								<button id="fillPass" class="btn btn-default" type="button" arial-label="Fill Password" data-toggle="tooltip" title="Some tooltip text!">
-									<span class="glyphicon glyphicon-log-in"></span>
-								</button>
-							</div>
-						</div>
-					</div>
+					<a href="#" class="btn btn-success btn-lg btn-block btn-raised">
+						<!-- <i class="material-icons">done</i> -->
+						FILL PASSWORD
+						<div class="ripple-container"></div>
+					</a>
 				</div>
 			</div>
 		</form>

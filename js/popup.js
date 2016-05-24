@@ -134,62 +134,112 @@ var settings = {
         length: 12
     },
 
-    maxTries: 1
+    maxTries: 1,
+
+    animationSpeed: 250
 };
 
 window.onload = function() {
     setupMessaging();
     resizeWindow();
 
-    $('#genPass').on('click', function(e) {
-        chrome.tabs.getSelected(null, function(tab) {
-            tab.url = $('<a/>', { href: tab.url })[0];
-
-            var domain = tab.url.hostname,
-                password = $('#password').val(),
-                passSalt = [domain, password].join(':'),
-                passHash = hash(passSalt),
-                passEnc = encode(passHash),
-                strongPass = findStrongPass(passEnc, settings.criteria),
-                strength = checkStrength(passEnc, settings.criteria);
-
-            if (strongPass.result) {
-                content.postMessage({
-                    method: 'fillPass',
-                    password: strongPass.password
-                });
-            }
-        });
-    });
-
     $('#showPass').on('click', function(e) {
-        $('#masterPass').attr('type', ($('#masterPass').attr('type') === 'password'
-            ? 'text' : 'password'));
+        if ($('#masterPass').attr('type') === 'password') {
+            $('#masterPass').attr('type', 'text');
+            $('#showPass').text('visibility_off');
+        } else {
+            $('#masterPass').attr('type', 'password');
+            $('#showPass').text('visibility');
+        }
     });
 
-    $('#fortressPass').on('click', function(e) {
-        e.preventDefault();
-        
+    $('#masterPass').on('keypress', function(e) {
         chrome.tabs.getSelected(null, function(tab) {
             tab.url = $('<a/>', { href: tab.url })[0];
 
             var domain = tab.url.hostname,
-                password = $('#password').val(),
+                password = $('#masterPass').val(),
                 passSalt = [domain, password].join(':'),
                 passHash = hash(passSalt),
                 passEnc = encode(passHash),
                 strongPass = findStrongPass(passEnc, settings.criteria),
                 strength = checkStrength(passEnc, settings.criteria);
 
-            if (strongPass.result) {
-                content.postMessage({
-                    method: 'fillPass',
-                    password: strongPass.password
-                });
-            }
+            $('#uniquePass').val(strongPass.password);
+
+            // if (strongPass.result) {
+            //     content.postMessage({
+            //         method: 'fillPass',
+            //         password: strongPass.password
+            //     });
+            // }
         });
-        
     });
+
+    // enable tooltips
+    $("[data-toggle='tooltip']").tooltip({ container: 'body' });
+
+    // initialize material bootstrap
+    $.material.init();
+
+    $('#bs-example-navbar-collapse-1').on('show.bs.collapse', function(e) {
+        $('nav').attr('class', 'navbar navbar-primary');
+        $('#content').slideToggle().animate({ opacity: 0 });
+    }).on('hide.bs.collapse', function(e) {
+        $('nav').attr('class', 'navbar navbar-inverse');
+        $('#content').slideToggle().animate({ opacity: 1 });
+    });
+
+    $('[data-toggle="slide"]').on('click', function() {
+        $(this).slideToggle();
+        var target = $(this).attr('for');
+        $('#' + target).closest('.form-group').slideToggle();
+        $('#' + target).focus();
+    });
+
+    $('nav input').on('blur', function(e) {
+        if (e.relatedTarget === null || ~e.relatedTarget.toString().indexOf('HTMLButtonElement') === 0) {
+            $(this).closest('.form-group').slideToggle();
+            $('[data-toggle="slide"][for="' + $(this).attr('id') + '"]').slideToggle();
+        }
+    });
+
+    $('nav button[for][data-action="add"]').on('click', function() {
+        var $for = $('#' + $(this).attr('for'));
+        $for.val(Number($for.val()) +1).focus();
+    });
+
+    $('nav button[for][data-action="remove"]').on('click', function() {
+        var $for = $('#' + $(this).attr('for'));
+        c.log(Number($for.val()));
+        if (Number($for.val()) > 0) {
+            $for.val(Number($for.val()) -1).focus();
+        }
+    });
+
+    $('#copyPass').on('click', function() {
+        if ($('#uniquePass').val().length > 0) {
+            copyTextToClipboard($('#uniquePass').val());
+            $(this).animate({ opacity: 0 }, function() {
+                $(this)
+                    .text('done')
+                    .addClass('text-success')
+                    .animate({ opacity: 1 });
+            });
+
+            $this = $(this);
+            setTimeout(function() {
+                $this.animate({ opacity: 0 }, function() {
+                    $this
+                        .text('content_copy')
+                        .removeClass('text-success')
+                        .animate({ opacity: 1 });
+                });
+            }, 2500);
+        }
+    })
+
+    $('a[href="#"]').on('click', function(e) { e.preventDefault(); });
 };
 
 function setupMessaging() {
@@ -494,7 +544,6 @@ function findStrongPass(data, options, tries) {
     while (i + length <= data.length) {
         var subData = data.substr(i, options.length);
         if (checkStrength(subData, options).strong) {
-            c.info('strong password', subData);
             return {
                 result: true,
                 message: 'Successfully found strong password',
@@ -576,4 +625,14 @@ function resizeWindow(callback) {
 
             callback();
         });
+}
+
+// Copy provided text to the clipboard.
+function copyTextToClipboard(text) {
+    var copyFrom = $('<textarea/>');
+    copyFrom.text(text);
+    $('body').append(copyFrom);
+    copyFrom.select();
+    document.execCommand('copy');
+    copyFrom.remove();
 }
