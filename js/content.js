@@ -132,9 +132,6 @@ function messagingMethods(msg, src) {
 var content = {
     init: function() {
         setupMessaging();
-
-        // c.clear();
-
         c.log('content.js is ready.');
     }
 };
