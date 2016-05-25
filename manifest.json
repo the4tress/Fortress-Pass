@@ -3,7 +3,6 @@
   "name": "Fortress Pass",
   "description": "A unique password on every site without any database backup. One password to rule them all.",
   "version": "0.1",
-  "options_page": "html/options.html",
   "author": "Ryan Fortress",
 
   "icons": {

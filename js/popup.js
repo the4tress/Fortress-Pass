@@ -127,14 +127,6 @@ var settings = {
         }
     },
 
-    // criteria: {
-    //     uppercase: 2,
-    //     lowercase: 2,
-    //     numbers: 2,
-    //     special: 2,
-    //     length: 12
-    // },
-
     maxTries: 10,
 
     animationSpeed: 250
