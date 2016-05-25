@@ -1,4 +1,6 @@
 var c = {
+    outputEnabled: true,
+
     _styles: {
         str: 'background: #d9edf7; padding: 2px 2px; border-bottom: 1px solid #31708f;',
         sys: 'background: #d9edf7; padding: 2px 2px; border-bottom: 1px solid #31708f; font-weight: bold;',
@@ -72,7 +74,7 @@ function setupMessaging() {
         if (port.name == 'popup2content') {
             popup = port;
             popup.onMessage.addListener(function(msg) {
-                if (msg.method !== 'console') {
+                if (msg.method !== 'console' && c.outputEnabled) {
                     c.group('Inbound popup message', msg.method);
                     messagingMethods(msg, popup);
                     c.groupEnd();
@@ -110,6 +112,13 @@ function messagingMethods(msg, src) {
         fillPass: function() {
             c.log('filling all password fields with', msg.password);
             $('input:password').val(msg.password);
+        },
+
+        hasPass: function() {
+            popup.postMessage({
+                method: 'hasPass',
+                count: $('input[type="password"]').length
+            });
         }
     };
 
@@ -129,6 +138,5 @@ var content = {
         c.log('content.js is ready.');
     }
 };
-
 
 jQuery( document ).ready(function($) { content.init(); });

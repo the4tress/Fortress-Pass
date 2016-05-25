@@ -1,4 +1,5 @@
-var content, background, tmp;
+var content, background, tmp, domain;
+var sync = chrome.storage.sync;
 
 var c = {
     /*
@@ -126,15 +127,15 @@ var settings = {
         }
     },
 
-    criteria: {
-        uppercase: 2,
-        lowercase: 2,
-        numbers: 2,
-        special: 2,
-        length: 12
-    },
+    // criteria: {
+    //     uppercase: 2,
+    //     lowercase: 2,
+    //     numbers: 2,
+    //     special: 2,
+    //     length: 12
+    // },
 
-    maxTries: 1,
+    maxTries: 10,
 
     animationSpeed: 250
 };
@@ -143,107 +144,188 @@ window.onload = function() {
     setupMessaging();
     resizeWindow();
 
-    $('#showPass').on('click', function(e) {
-        if ($('#masterPass').attr('type') === 'password') {
-            $('#masterPass').attr('type', 'text');
-            $('#showPass').text('visibility_off');
-        } else {
-            $('#masterPass').attr('type', 'password');
-            $('#showPass').text('visibility');
-        }
+    chrome.tabs.getSelected(null, function(tab) {
+        // convert the tab url into an anchor element to expose extra info
+        tab.url = $('<a/>', { href: tab.url })[0];
+
+        // split the hostname so we can get each level of the domain
+        var hostname = tab.url.hostname.split('.');
+
+        // get just the last 2 sections of the domain (domain and tld)
+        domain = [hostname[hostname.length -2], hostname[hostname.length -1]].join('.');
+
+        $('#appTitle').text(domain);
     });
 
-    $('#masterPass').on('keypress', function(e) {
-        chrome.tabs.getSelected(null, function(tab) {
-            tab.url = $('<a/>', { href: tab.url })[0];
-
-            var domain = tab.url.hostname,
-                password = $('#masterPass').val(),
-                passSalt = [domain, password].join(':'),
-                passHash = hash(passSalt),
-                passEnc = encode(passHash),
-                strongPass = findStrongPass(passEnc, settings.criteria),
-                strength = checkStrength(passEnc, settings.criteria);
-
-            $('#uniquePass').val(strongPass.password);
-
-            // if (strongPass.result) {
-            //     content.postMessage({
-            //         method: 'fillPass',
-            //         password: strongPass.password
-            //     });
-            // }
+    $('#showPass')
+        .on('click', function(e) {
+            if ($('#masterPass').attr('type') === 'password') {
+                $('#masterPass').attr('type', 'text');
+                $('#showPass').text('visibility_off');
+            } else {
+                $('#masterPass').attr('type', 'password');
+                $('#showPass').text('visibility');
+            }
         });
-    });
+
+    $('#fillPass')
+        .on('click', function() {
+            if ($(this).is('[disabled]')) { return; }
+
+            content.postMessage({
+                method: 'fillPass',
+                password: $('#uniquePass').val()
+            });
+
+            $(this).text('filled password');
+        });
+
+    $('#masterPass')
+        .on('keypress', function(e) {
+            generatePass();
+        });
+
+    // handle opening and closing options
+    $('#bs-example-navbar-collapse-1')
+        .on('show.bs.collapse', function(e) {
+            $('nav').attr('class', 'navbar navbar-primary');
+            $('#content').slideToggle().animate({ opacity: 0 });
+        })
+        .on('hide.bs.collapse', function(e) {
+            $('nav').attr('class', 'navbar navbar-inverse');
+            $('#content').slideToggle().animate({ opacity: 1 });
+        });
+
+    // actions for when the options buttons are pressed
+    $('[data-toggle="slide"]')
+        .on('click', function() {
+            $(this).slideToggle();
+            var target = $(this).attr('for');
+            $('#' + target).closest('.form-group').slideToggle();
+            $('#' + target).focus();
+        });
+
+    // restore when input is blurred
+    $('nav input')
+        .on('blur', function(e) {
+            if (e.relatedTarget === null || ~e.relatedTarget.toString().indexOf('HTMLButtonElement') === 0) {
+                $(this).closest('.form-group').slideToggle();
+                $('[data-toggle="slide"][for="' + $(this).attr('id') + '"]').slideToggle();
+            }
+        });
+
+    // increase count when clicked
+    $('nav button[for][data-action="add"]')
+        .on('click', function() {
+            var $for = $('#' + $(this).attr('for')),
+                minLength = 0;
+
+            $for.val(Number($for.val()) +1).focus();
+
+            $('nav input')
+                .not('#length')
+                .each(function() {
+                    minLength += Number($(this).val());
+                });
+
+            c.log('minLength', minLength);
+            if ($('#length').val() < minLength) { $('#length').val(minLength); }
+
+            settings.criteria[$for.attr('id')] = $for.val();
+            generatePass();
+            updateSettings();
+        });
+
+    // decrease the count when clicked
+    $('nav button[for][data-action="remove"]')
+        .on('click', function() {
+            var $for = $('#' + $(this).attr('for')),
+                minLength = 0;
+
+            $('nav input').not('#length').each(function() { minLength += Number($(this).val()); });
+
+            var minVal = ($for.attr('id') === 'length' ? minLength : 0);
+
+            if (Number($for.val()) > minVal) { $for.val(Number($for.val()) -1).focus(); }
+            settings.criteria[$for.attr('id')] = Number($for.val());
+            generatePass();
+            updateSettings();
+        });
+
+    // copy password to clipboard
+    $('#copyPass')
+        .on('click', function() {
+            if ($('#uniquePass').val().length > 0) {
+                copyTextToClipboard($('#uniquePass').val());
+                $(this).animate({ opacity: 0 }, function() {
+                    $(this)
+                        .text('done')
+                        .addClass('text-success')
+                        .animate({ opacity: 1 });
+                });
+
+                $this = $(this);
+                setTimeout(function() {
+                    $this.animate({ opacity: 0 }, function() {
+                        $this
+                            .text('content_copy')
+                            .removeClass('text-success')
+                            .animate({ opacity: 1 });
+                    });
+                }, 2500);
+            }
+        })
+
+    // don't follow temp links
+    $('a[href="#"]').on('click', function(e) { e.preventDefault(); });
 
     // enable tooltips
     $("[data-toggle='tooltip']").tooltip({ container: 'body' });
 
     // initialize material bootstrap
     $.material.init();
-
-    $('#bs-example-navbar-collapse-1').on('show.bs.collapse', function(e) {
-        $('nav').attr('class', 'navbar navbar-primary');
-        $('#content').slideToggle().animate({ opacity: 0 });
-    }).on('hide.bs.collapse', function(e) {
-        $('nav').attr('class', 'navbar navbar-inverse');
-        $('#content').slideToggle().animate({ opacity: 1 });
-    });
-
-    $('[data-toggle="slide"]').on('click', function() {
-        $(this).slideToggle();
-        var target = $(this).attr('for');
-        $('#' + target).closest('.form-group').slideToggle();
-        $('#' + target).focus();
-    });
-
-    $('nav input').on('blur', function(e) {
-        if (e.relatedTarget === null || ~e.relatedTarget.toString().indexOf('HTMLButtonElement') === 0) {
-            $(this).closest('.form-group').slideToggle();
-            $('[data-toggle="slide"][for="' + $(this).attr('id') + '"]').slideToggle();
-        }
-    });
-
-    $('nav button[for][data-action="add"]').on('click', function() {
-        var $for = $('#' + $(this).attr('for'));
-        $for.val(Number($for.val()) +1).focus();
-    });
-
-    $('nav button[for][data-action="remove"]').on('click', function() {
-        var $for = $('#' + $(this).attr('for'));
-        c.log(Number($for.val()));
-        if (Number($for.val()) > 0) {
-            $for.val(Number($for.val()) -1).focus();
-        }
-    });
-
-    $('#copyPass').on('click', function() {
-        if ($('#uniquePass').val().length > 0) {
-            copyTextToClipboard($('#uniquePass').val());
-            $(this).animate({ opacity: 0 }, function() {
-                $(this)
-                    .text('done')
-                    .addClass('text-success')
-                    .animate({ opacity: 1 });
-            });
-
-            $this = $(this);
-            setTimeout(function() {
-                $this.animate({ opacity: 0 }, function() {
-                    $this
-                        .text('content_copy')
-                        .removeClass('text-success')
-                        .animate({ opacity: 1 });
-                });
-            }, 2500);
-        }
-    })
-
-    $('a[href="#"]').on('click', function(e) { e.preventDefault(); });
 };
 
+function getData(params) {
+    params = params || '';
+    sync.get(params, function(data) { c.log(params, data); });
+}
+
+function init() {
+    // this is fired after the messaging between
+    // the popup and content has been established
+    content.postMessage({ method: 'hasPass' });
+
+    sync.get('defaults', function(data) {
+        if (!data.defaults) {
+            settings.criteria = {
+                uppercase: 2,
+                lowercase: 2,
+                numbers: 2,
+                special: 2,
+                length: 12
+            }
+
+            updateSettings();
+        } else {
+            settings.criteria = data.defaults;
+        }
+
+        // populate the criteria values
+        for (var item in settings.criteria) {
+            $('#criteria #' + item).val(settings.criteria[item]);
+        }
+    });
+}
+
+function updateSettings(cb) {
+    sync.set({ defaults: settings.criteria }, function() {
+        if (cb && typeof cb === 'function') { cb.call(); }
+    });
+}
+
 function setupMessaging() {
-    // Enable messaging for content
+    // mnable messaging with content
     chrome.tabs.query({
         active: true,
         currentWindow: true
@@ -269,8 +351,13 @@ function messagingMethods(msg) {
     if (!_.contains(skipMethods, msg.method)) { c.log('msg', msg); }
 
     var methods = {
-        ready: function() { c.log('Ready to send to content.'); }
-    }
+        ready: function() {
+            c.log('Ready to send to content.');
+            init();
+        },
+
+        hasPass: function() { $('#fillPass').data('count', msg.count); }
+    };
 
     if (msg.method in methods) {
         methods[msg.method].call();
@@ -556,7 +643,9 @@ function findStrongPass(data, options, tries) {
 
     tries++;
 
-    if (tries >= 10) {
+    if (tries >= settings.maxTries) {
+        c.warn('Couldn\'t generate password. Tried %s times', settings.maxTries);
+
         return {
             result: false,
             message: 'Tried 10 times without finding a strong password',
@@ -598,31 +687,19 @@ function checkStrength(data, options, cb) {
     return $.extend(true, {}, resultPass, resultCounts);
 }
 
-function password(pass) {
-    var _this = this;
-
-    this.value = pass;
-}
-
 function resizeWindow(callback) {
     /*
-        This will resize the popup window.
-
-        Use callback to fire an event after the resize is complete.
+    This will resize the popup window.
+    Use callback to fire an event after the resize is complete.
     */
 
     callback = (arguments.length == 2 && typeof callback === 'function'
-        ? callback
-        : function() { return; });
+        ? callback : function() { return; });
 
     $('body')
         .css({ display: 'none' })
-        .animate({
-            width: 300,
-            // height: 400
-        }, 10, function() {
+        .animate({ width: 300 }, 10, function() {
             $('body').css({ display: 'block' });
-
             callback();
         });
 }
@@ -635,4 +712,35 @@ function copyTextToClipboard(text) {
     copyFrom.select();
     document.execCommand('copy');
     copyFrom.remove();
+}
+
+function generatePass() {
+    var password = $('#masterPass').val(),
+        passSalt = [domain, password].join(':'),
+        passHash = hash(passSalt),
+        passEnc = encode(passHash),
+        strongPass = findStrongPass(passEnc, settings.criteria),
+        strength = checkStrength(passEnc, settings.criteria);
+
+    if (password.length === 0) {
+        $('#uniquePass').val('');
+
+        if (!$('#copyPass').is('[disabled]')) {
+            $('#copyPass').attr('disabled', true).css({ opacity: .5 });
+        }
+
+        if (!$('#fillPass').is('[disabled]')) {
+            $('#fillPass').attr('disabled', true);
+        }
+    } else {
+        $('#uniquePass').val(strongPass.password);
+
+        if ($('#copyPass').is('[disabled]')) {
+            $('#copyPass').attr('disabled', false).css({ opacity: 1 });
+        }
+
+        if ($('#fillPass').is('[disabled]') && $('#fillPass').data('count') > 0) {
+            $('#fillPass').attr('disabled', false);
+        }
+    }
 }
