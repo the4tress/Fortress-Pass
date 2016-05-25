@@ -6,3 +6,7 @@ This is a Chrome extension for password management. It will create a unique pass
 # Installation
 
 The extension is available in the [Chrome Store](https://goo.gl/pvr44k). Just install.
+
+# Demo
+
+![demo](demo.gif)
